@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { jwtConstants } from './constants';
 import { JwtService } from '@nestjs/jwt';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -63,4 +64,16 @@ export class AuthService {
       }),
     };
   }
+
+  private async setRefreshTokenHash(userId: number, refreshToken) {
+    const [hashedRefreshToken, user] = await Promise.all([
+      argon2.hash(refreshToken),
+      this.userService.findOneById(userId),
+    ]);
+
+    console.log(hashedRefreshToken);
+    console.log(user);
+  }
+
+  register() {}
 }

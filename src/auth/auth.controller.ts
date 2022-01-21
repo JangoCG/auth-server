@@ -32,4 +32,8 @@ export class AuthController {
 
     return this.authService.refresh(userId, refreshToken);
   }
+
+  public createAccount() {
+    this.authService.register();
+  }
 }
