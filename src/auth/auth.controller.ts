@@ -3,7 +3,7 @@ import { LocalAuthGuard } from '../guard/local-auth.guard';
 import { AuthService } from './auth.service';
 import { RefreshTokenJwtGuard } from '../guard/rt-jwt-auth.guard';
 import { Public } from '../decorator/public.decorator';
-import { CreateUserDto } from '../user/model/create-user.dto';
+import { CreateUserDto } from './model/create-user.dto';
 
 @Controller('authentications')
 export class AuthController {
