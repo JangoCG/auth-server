@@ -3,7 +3,7 @@ import { LocalAuthGuard } from '../guard/local-auth.guard';
 import { AuthService } from './auth.service';
 import { RefreshTokenJwtGuard } from '../guard/rt-jwt-auth.guard';
 import { Public } from '../decorator/public.decorator';
-import { CreateUserDto } from './dto/create-account.dto';
+import { CreateUserDto } from '../user/model/create-user.dto';
 
 @Controller('authentications')
 export class AuthController {
@@ -24,16 +24,21 @@ export class AuthController {
   }
 
   @Public()
-  @Post('refresh')
+  @Post('refresh-token')
   @UseGuards(RefreshTokenJwtGuard)
   public refresh(@Req() req) {
-    console.log('req', req.user);
-    const userId: string = req.sub; // sub = subject. this is the user id
-    const refreshToken: string = req.refreshToken;
+    const userId: string = req.user.sub; // sub = subject. this is the user id
+    const refreshToken: string = req.user.refreshToken;
 
     return this.authService.refresh(userId, refreshToken);
   }
 
+  /**
+   * Create a new user account
+   * @param createUserDto
+   *
+   * @return The created account
+   */
   @Public()
   @Post('account')
   public createAccount(@Body() createUserDto: CreateUserDto) {

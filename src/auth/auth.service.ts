@@ -1,9 +1,14 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { jwtConstants } from './constants';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
-import { CreateUserDto } from './dto/create-account.dto';
+import { CreateUserDto } from '../user/model/create-user.dto';
+import { User } from '../user/model/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -38,18 +43,31 @@ export class AuthService {
    * @param user
    */
   async login(user: any) {
-    return this.createTokens(user);
+    const tokens = await this.createTokens(user);
+    await this.updateRefreshTokenHash(user, tokens.refresh_token);
+    return tokens;
   }
 
   async refresh(userId, refreshToken) {
-    const user = this.userService.findById(userId);
+    const user = await this.userService.findById(userId);
 
-    // todo: also add hashed rt to user
-    if (!user) {
+    if (!user || !user.hashedRefreshToken) {
       throw new ForbiddenException('Access Denied');
     }
 
-    return this.createTokens(user);
+    const refreshTokenMatches = argon2.verify(
+      user.hashedRefreshToken,
+      refreshToken,
+    );
+
+    if (!refreshTokenMatches) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const tokens = this.createTokens(user);
+    await this.updateRefreshTokenHash(user, refreshToken);
+
+    return this.createTokens(tokens);
   }
 
   private createTokens(user) {
@@ -68,18 +86,19 @@ export class AuthService {
     };
   }
 
-  // TODO Implement this and use for token creation
-  private async setRefreshTokenHash(userId: number, refreshToken) {
-    const [hashedRefreshToken, user] = await Promise.all([
-      argon2.hash(refreshToken),
-      this.userService.findById(userId),
-    ]);
-
-    console.log(hashedRefreshToken);
-    console.log(user);
+  private async updateRefreshTokenHash(
+    user: User,
+    refreshToken: string,
+  ): Promise<void> {
+    user.hashedRefreshToken = await argon2.hash(refreshToken);
+    await this.userService.updateUser(user);
   }
 
   async register(createUserDto: CreateUserDto) {
+    const user = await this.userService.findByEmail(createUserDto.email);
+    if (user) {
+      throw new ConflictException('The e-mail is already taken');
+    }
     createUserDto.password = await argon2.hash(createUserDto.password);
     return this.userService.save(createUserDto);
   }

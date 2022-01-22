@@ -21,6 +21,10 @@ export class RtJwtStrategy extends PassportStrategy(
     // split the authorization header at whitespace and then get the second part (the token)
     // Recall the format of the header is Authorization: Bearer hereIsTheToken
     const refreshToken = req.get('authorization').split(' ')[1];
+    console.log({
+      ...payload,
+      refreshToken,
+    });
 
     if (!refreshToken) {
       throw new ForbiddenException('Refresh token has invalid format');
