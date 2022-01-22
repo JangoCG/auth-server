@@ -3,6 +3,7 @@ import { UserService } from '../user/user.service';
 import { jwtConstants } from './constants';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { CreateUserDto } from './dto/create-account.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,15 +14,17 @@ export class AuthService {
   /**
    * This method is used to validate a user (Look him up in db and check his pw). This method
    * will be called from our passport local strategy
-   * @param username user to validate
+   * @param email user to validate
    * @param password pass of the user.
    *
    * @return User data without his pw. TODO Replace this with a dto
    */
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.userService.findOne(username);
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userService.findByEmail(email);
 
-    if (user && user.password === password) {
+    const passwordIsCorrect = await argon2.verify(user.password, password);
+
+    if (user && passwordIsCorrect) {
       // extract password from the object and return the rest
       const { password, ...rest } = user;
 
@@ -39,7 +42,7 @@ export class AuthService {
   }
 
   async refresh(userId, refreshToken) {
-    const user = this.userService.findOneById(userId);
+    const user = this.userService.findById(userId);
 
     // todo: also add hashed rt to user
     if (!user) {
@@ -65,15 +68,19 @@ export class AuthService {
     };
   }
 
+  // TODO Implement this and use for token creation
   private async setRefreshTokenHash(userId: number, refreshToken) {
     const [hashedRefreshToken, user] = await Promise.all([
       argon2.hash(refreshToken),
-      this.userService.findOneById(userId),
+      this.userService.findById(userId),
     ]);
 
     console.log(hashedRefreshToken);
     console.log(user);
   }
 
-  register() {}
+  async register(createUserDto: CreateUserDto) {
+    createUserDto.password = await argon2.hash(createUserDto.password);
+    return this.userService.save(createUserDto);
+  }
 }
