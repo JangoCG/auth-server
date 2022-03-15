@@ -71,12 +71,12 @@ export class AuthService {
   }
 
   private createTokens(user) {
-    const payload = { username: user.username, sub: user.userId };
+    const payload = { username: user.email, sub: user.userId };
 
     return {
       access_token: this.jwtService.sign(payload, {
         secret: jwtConstants.accessTokenSecret,
-        expiresIn: '15m', // https://github.com/vercel/ms
+        expiresIn: '1d', // https://github.com/vercel/ms
       }),
 
       refresh_token: this.jwtService.sign(payload, {

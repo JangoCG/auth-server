@@ -5,7 +5,7 @@ import { RefreshTokenJwtGuard } from '../guard/rt-jwt-auth.guard';
 import { Public } from '../decorator/public.decorator';
 import { CreateUserDto } from './model/create-user.dto';
 
-@Controller('authentications')
+@Controller('/api/v1/authentications')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
